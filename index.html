@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Laboratorio de Parábolas (Final v3 - Scroll Corregido)</title>
+    <title>Laboratorio de Parábolas (Altura Responsiva)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -30,7 +30,7 @@
             background-color: #f8fafc;
             cursor: grab;
             width: 100%;
-            height: 70vh;
+            /* Height is now controlled by Tailwind classes for responsiveness */
             display: block;
             /* Prevents default browser actions ONLY on the canvas, allowing page scroll to work */
             touch-action: none;
@@ -63,7 +63,7 @@
             
             <!-- Columna Izquierda: Canvas -->
             <div class="md:col-span-7 p-4">
-                <canvas id="parabolaCanvas"></canvas>
+                <canvas id="parabolaCanvas" class="h-[50vh] md:h-[70vh]"></canvas>
             </div>
 
             <!-- Columna Derecha: Panel de Control Unificado -->
@@ -465,16 +465,18 @@
                 isDragging = false;
                 pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             }
-        });
+        }, { passive: false });
+
 
         canvas.addEventListener('touchend', e => {
             isDragging = false;
             pinchStartDist = 0;
-        });
+        }, { passive: false });
 
         canvas.addEventListener('touchmove', e => {
+            // Only prevent default if we are actually handling the gesture
             if ((e.touches.length === 1 && isDragging) || e.touches.length === 2) {
-                e.preventDefault();
+                e.preventDefault(); 
             } else {
                 return;
             }
