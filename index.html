@@ -10,7 +10,7 @@
         body {
             font-family: 'Inter', sans-serif;
             font-size: 92%;
-             /* Allows page scrolling but canvas handles its own gestures */
+            /* Allows page scrolling but canvas handles its own gestures */
             touch-action: manipulation;
         }
         .slider-container {
@@ -144,8 +144,8 @@
         <!-- Footer -->
         <footer class="text-center mt-6">
              <p class="text-sm text-gray-500">
-                Simulación creada por <a href="https://aulaquest.com" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">AulaQuest</a>
-            </p>
+                 Simulación creada por <a href="https://aulaquest.com" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">AulaQuest</a>
+             </p>
         </footer>
     </div>
 
@@ -175,20 +175,20 @@
             vertex: '#8b5cf6', roots: '#f97316', focus: '#14b8a6', directrix: '#ec4899', text: '#1f2937', interactive: '#f59e0b'
         };
 
-        const sliderA1 = document.getElementById('sliderA1'), valueA1 = document.getElementById('valueA1');
-        const sliderB1 = document.getElementById('sliderB1'), valueB1 = document.getElementById('valueB1');
-        const sliderC1 = document.getElementById('sliderC1'), valueC1 = document.getElementById('valueC1');
+        const sliderA1 = document.getElementById('sliderA1');
+        const sliderB1 = document.getElementById('sliderB1');
+        const sliderC1 = document.getElementById('sliderC1');
         const checkTermA = document.getElementById('checkTermA'), checkTermB = document.getElementById('checkTermB'), checkTermC = document.getElementById('checkTermC');
 
-        const sliderA2 = document.getElementById('sliderA2'), valueA2 = document.getElementById('valueA2');
-        const sliderB2 = document.getElementById('sliderB2'), valueB2 = document.getElementById('valueB2');
-        const sliderC2 = document.getElementById('sliderC2'), valueC2 = document.getElementById('valueC2');
+        const sliderA2 = document.getElementById('sliderA2');
+        const sliderB2 = document.getElementById('sliderB2');
+        const sliderC2 = document.getElementById('sliderC2');
         const checkVertex = document.getElementById('checkVertex'), checkVertexCoords = document.getElementById('checkVertexCoords');
         const checkAxis = document.getElementById('checkAxis'), checkRoots = document.getElementById('checkRoots'), checkRootsCoords = document.getElementById('checkRootsCoords');
         
-        const sliderP = document.getElementById('sliderP'), valueP = document.getElementById('valueP');
-        const sliderH = document.getElementById('sliderH'), valueH = document.getElementById('valueH');
-        const sliderK = document.getElementById('sliderK'), valueK = document.getElementById('valueK');
+        const sliderP = document.getElementById('sliderP');
+        const sliderH = document.getElementById('sliderH');
+        const sliderK = document.getElementById('sliderK');
         const checkFocus = document.getElementById('checkFocus'), checkDirectrix = document.getElementById('checkDirectrix'), checkInteractivePoint = document.getElementById('checkInteractivePoint');
 
         const toCanvasX = x => origin.x + x * scale;
@@ -375,11 +375,13 @@
             sliderH.value = 0;
             sliderK.value = 0;
             
+            // Update all visible numeric values from the slider values
             document.querySelectorAll('input[type="range"]').forEach(control => {
                 const valueSpan = document.getElementById(control.id.replace('slider', 'value'));
                 if(valueSpan) valueSpan.textContent = (+control.value).toFixed(2);
             });
 
+            // Reset checkboxes
             checkTermA.checked = false;
             checkTermB.checked = false;
             checkTermC.checked = false;
@@ -393,123 +395,143 @@
             checkInteractivePoint.checked = true;
             scale = 70;
             
-            navButtons.sim1.click();
-            resizeCanvas();
+            navButtons.sim1.click(); // Start on the first simulation
+            resizeCanvas(); // This will also call draw()
         }
 
-        Object.keys(navButtons).forEach(key => {
-            navButtons[key].addEventListener('click', () => {
-                activeSim = key;
-                Object.values(navButtons).forEach(btn => btn.classList.remove('btn-active'));
-                navButtons[key].classList.add('btn-active');
-                
-                Object.keys(controlPanels).forEach(panelKey => {
-                    controlPanels[panelKey].classList.toggle('hidden', panelKey !== key);
-                    vizPanels[panelKey].classList.toggle('hidden', panelKey !== key);
+        function setupEventListeners() {
+            // --- Navigation Button Listeners ---
+            Object.keys(navButtons).forEach(key => {
+                navButtons[key].addEventListener('click', () => {
+                    activeSim = key;
+                    Object.values(navButtons).forEach(btn => btn.classList.remove('btn-active'));
+                    navButtons[key].classList.add('btn-active');
+                    
+                    Object.keys(controlPanels).forEach(panelKey => {
+                        controlPanels[panelKey].classList.toggle('hidden', panelKey !== key);
+                        vizPanels[panelKey].classList.toggle('hidden', panelKey !== key);
+                    });
+                    
+                    canvas.style.cursor = activeSim === 'sim3' ? 'crosshair' : 'grab';
+                    draw();
                 });
-                
-                canvas.style.cursor = activeSim === 'sim3' ? 'crosshair' : 'grab';
+            });
+
+            // --- Control Listeners (Sliders and Checkboxes) ---
+            const slidersToSync = {
+                'sliderA1': sliderA2, 'sliderB1': sliderB2, 'sliderC1': sliderC2,
+                'sliderA2': sliderA1, 'sliderB2': sliderB1, 'sliderC2': sliderC1
+            };
+
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.addEventListener('input', () => {
+                    // Update the text value next to the slider being moved
+                    const valueSpan = document.getElementById(slider.id.replace('slider', 'value'));
+                    if (valueSpan) {
+                        valueSpan.textContent = parseFloat(slider.value).toFixed(2);
+                    }
+
+                    // Check if this slider needs to sync with another one
+                    const targetSlider = slidersToSync[slider.id];
+                    if (targetSlider) {
+                        targetSlider.value = slider.value;
+                        const targetValueSpan = document.getElementById(targetSlider.id.replace('slider', 'value'));
+                        if (targetValueSpan) {
+                            targetValueSpan.textContent = parseFloat(targetSlider.value).toFixed(2);
+                        }
+                    }
+                    
+                    draw(); // Redraw the canvas after any change
+                });
+            });
+
+            document.querySelectorAll('input[type="checkbox"]').forEach(control => {
+                control.addEventListener('input', draw);
+            });
+
+            // --- Canvas Interaction Listeners ---
+            canvas.addEventListener('wheel', e => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+                const mousePosBefore = { x: fromCanvasX(mouseX), y: fromCanvasY(mouseY) };
+                scale *= (e.deltaY < 0 ? 1.1 : 1 / 1.1);
+                const mousePosAfter = { x: fromCanvasX(mouseX), y: fromCanvasY(mouseY) };
+                origin.x += (mousePosAfter.x - mousePosBefore.x) * scale;
+                origin.y -= (mousePosAfter.y - mousePosBefore.y) * scale;
                 draw();
             });
-        });
-        
-        function syncSliders(source, targetVal, targetSlider) {
-            const val = source.value;
-            targetVal.textContent = (+val).toFixed(2);
-            targetSlider.value = val;
-        }
 
-        sliderA1.addEventListener('input', () => syncSliders(sliderA1, valueA2, sliderA2));
-        sliderB1.addEventListener('input', () => syncSliders(sliderB1, valueB2, sliderB2));
-        sliderC1.addEventListener('input', () => syncSliders(sliderC1, valueC2, sliderC2));
-        sliderA2.addEventListener('input', () => syncSliders(sliderA2, valueA1, sliderA1));
-        sliderB2.addEventListener('input', () => syncSliders(sliderB2, valueB1, sliderB1));
-        sliderC2.addEventListener('input', () => syncSliders(sliderC2, valueC1, sliderC1));
+            canvas.addEventListener('mousedown', e => { isDragging = true; dragStart = { x: e.clientX, y: e.clientY }; canvas.style.cursor = 'grabbing'; });
+            canvas.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = activeSim === 'sim3' ? 'crosshair' : 'grab'; });
+            canvas.addEventListener('mouseleave', () => { isDragging = false; canvas.style.cursor = 'default'; });
+            canvas.addEventListener('mousemove', e => {
+                if (isDragging) {
+                    origin.x += e.clientX - dragStart.x;
+                    origin.y += e.clientY - dragStart.y;
+                    dragStart = { x: e.clientX, y: e.clientY };
+                    draw();
+                } else if (activeSim === 'sim3') {
+                    parabolaPointX = fromCanvasX(e.clientX - canvas.getBoundingClientRect().left);
+                    draw();
+                }
+            });
 
-        document.querySelectorAll('input[type="range"], input[type="checkbox"]').forEach(control => {
-            control.addEventListener('input', draw);
-        });
-        
-        canvas.addEventListener('wheel', e => {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
-            const mousePosBefore = { x: fromCanvasX(mouseX), y: fromCanvasY(mouseY) };
-            scale *= (e.deltaY < 0 ? 1.1 : 1 / 1.1);
-            const mousePosAfter = { x: fromCanvasX(mouseX), y: fromCanvasY(mouseY) };
-            origin.x += (mousePosAfter.x - mousePosBefore.x) * scale;
-            origin.y -= (mousePosAfter.y - mousePosBefore.y) * scale;
-            draw();
-        });
+            canvas.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                } else if (e.touches.length === 2) {
+                    isDragging = false;
+                    pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                }
+            }, { passive: false });
 
-        canvas.addEventListener('mousedown', e => { isDragging = true; dragStart = { x: e.clientX, y: e.clientY }; canvas.style.cursor = 'grabbing'; });
-        canvas.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = activeSim === 'sim3' ? 'crosshair' : 'grab'; });
-        canvas.addEventListener('mouseleave', () => { isDragging = false; canvas.style.cursor = 'default'; });
-        canvas.addEventListener('mousemove', e => {
-            if (isDragging) {
-                origin.x += e.clientX - dragStart.x;
-                origin.y += e.clientY - dragStart.y;
-                dragStart = { x: e.clientX, y: e.clientY };
-                draw();
-            } else if (activeSim === 'sim3') {
-                parabolaPointX = fromCanvasX(e.clientX - canvas.getBoundingClientRect().left);
-                draw();
-            }
-        });
 
-        canvas.addEventListener('touchstart', e => {
-            if (e.touches.length === 1) {
-                isDragging = true;
-                dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            } else if (e.touches.length === 2) {
+            canvas.addEventListener('touchend', e => {
                 isDragging = false;
-                pinchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            }
-        }, { passive: false });
+                pinchStartDist = 0;
+            }, { passive: false });
 
+            canvas.addEventListener('touchmove', e => {
+                if ((e.touches.length === 1 && isDragging) || e.touches.length === 2) {
+                    e.preventDefault(); 
+                } else {
+                    return;
+                }
 
-        canvas.addEventListener('touchend', e => {
-            isDragging = false;
-            pinchStartDist = 0;
-        }, { passive: false });
+                if (e.touches.length === 1 && isDragging) {
+                    origin.x += e.touches[0].clientX - dragStart.x;
+                    origin.y += e.touches[0].clientY - dragStart.y;
+                    dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                } else if (e.touches.length === 2) {
+                    if (pinchStartDist <= 0) return;
+                    const newPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    const rect = canvas.getBoundingClientRect();
+                    const midpointX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+                    const midpointY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+                    const worldPosBefore = { x: fromCanvasX(midpointX), y: fromCanvasY(midpointY) };
+                    
+                    const scaleFactor = newPinchDist / pinchStartDist;
+                    scale *= scaleFactor;
 
-        canvas.addEventListener('touchmove', e => {
-            // Only prevent default if we are actually handling the gesture
-            if ((e.touches.length === 1 && isDragging) || e.touches.length === 2) {
-                e.preventDefault(); 
-            } else {
-                return;
-            }
+                    const worldPosAfter = { x: fromCanvasX(midpointX), y: fromCanvasY(midpointY) };
+                    origin.x += (worldPosAfter.x - worldPosBefore.x) * scale;
+                    origin.y -= (worldPosAfter.y - worldPosBefore.y) * scale;
+                    
+                    pinchStartDist = newPinchDist;
+                } else if (activeSim === 'sim3' && e.touches.length === 1) {
+                     parabolaPointX = fromCanvasX(e.touches[0].clientX - canvas.getBoundingClientRect().left);
+                }
+                draw();
+            }, { passive: false });
 
-            if (e.touches.length === 1 && isDragging) {
-                origin.x += e.touches[0].clientX - dragStart.x;
-                origin.y += e.touches[0].clientY - dragStart.y;
-                dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            } else if (e.touches.length === 2) {
-                if (pinchStartDist <= 0) return;
-                const newPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const rect = canvas.getBoundingClientRect();
-                const midpointX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
-                const midpointY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
-                const worldPosBefore = { x: fromCanvasX(midpointX), y: fromCanvasY(midpointY) };
-                
-                const scaleFactor = newPinchDist / pinchStartDist;
-                scale *= scaleFactor;
-
-                const worldPosAfter = { x: fromCanvasX(midpointX), y: fromCanvasY(midpointY) };
-                origin.x += (worldPosAfter.x - worldPosBefore.x) * scale;
-                origin.y -= (worldPosAfter.y - worldPosBefore.y) * scale;
-                
-                pinchStartDist = newPinchDist;
-            } else if (activeSim === 'sim3' && e.touches.length === 1) {
-                 parabolaPointX = fromCanvasX(e.touches[0].clientX - canvas.getBoundingClientRect().left);
-            }
-            draw();
-        }, { passive: false });
-
-        btnReset.addEventListener('click', resetSimulation);
-        window.addEventListener('resize', resizeCanvas);
+            btnReset.addEventListener('click', resetSimulation);
+            window.addEventListener('resize', resizeCanvas);
+        }
         
+        // --- INICIO ---
+        setupEventListeners();
         resetSimulation();
     });
     </script>
